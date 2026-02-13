@@ -25,27 +25,31 @@ class LoginController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
+        $validated = $validator->validated();
 
-        $user = User::firstWhere('email', $request->email);
+        $user = User::firstWhere('email', $validated['email']);
 
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid email or password'
             ], 401);
         }
 
-        $token = $user->createToken('api-token')->plainTextToken;
+        $abilities = $user->isAdmin() ? ['admin', 'user'] : ['user'];
+        $token = $user->createToken('api-token', $abilities)->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Login successful',
             'token' => $token,
+            'abilities' => $abilities,
             'data' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'role' => $user->role,
             ]
         ], 200);
     }

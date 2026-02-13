@@ -21,6 +21,7 @@ class RegisterController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:6',
+            'role' => 'nullable|string|in:user,admin',
         ]);
 
         if ($validator->fails()) {
@@ -30,11 +31,13 @@ class RegisterController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
+        $validated = $validator->validated();
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'] ?? 'user',
         ]);
 
         return response()->json([
@@ -44,6 +47,7 @@ class RegisterController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'role' => $user->role,
             ]
         ]);
 
